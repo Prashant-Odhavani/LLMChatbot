@@ -4,6 +4,6 @@
     {
         Task<float[]> GetEmbeddingAsync(string query);
         Task IndexDocumentAsync(string fullText);
-        Task<string> AskQuestionAsync(string question);
+        Task<string> AskQuestionAsync(string scopeId, string question);
     }
 }

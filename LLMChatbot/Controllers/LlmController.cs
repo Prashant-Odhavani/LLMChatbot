@@ -24,13 +24,13 @@ namespace LLMChatbot.Controllers
             return NoContent();
         }
 
-        [HttpPost("questions")]
-        public async Task<IActionResult> AskQuestion([FromBody] string question)
+        [HttpPost("questions/{scopeId}")]
+        public async Task<IActionResult> AskQuestion(string scopeId, [FromBody] string question)
         {
             if (string.IsNullOrWhiteSpace(question))
                 return BadRequest("Question cannot be empty.");
 
-            var answer = await _llmService.AskQuestionAsync(question);
+            var answer = await _llmService.AskQuestionAsync(scopeId, question);
             return Ok(new { answer });
         }
     }

@@ -41,9 +41,9 @@ public class LlmService : ILlmService
         return vector;
     }
 
-    public async Task<string> AskQuestionAsync(string question)
+    public async Task<string> AskQuestionAsync(string scopeId, string question)
     {
-        var relevantChunks = await SearchRelevantChunksAsync(question);
+        var relevantChunks = await SearchRelevantChunksAsync(scopeId, question);
 
         if (!relevantChunks.Any())
             return "Sorry, I could not find any relevant information.";
@@ -59,7 +59,7 @@ public class LlmService : ILlmService
     {
         var client = _httpClientFactory.CreateClient("LLMClient");
 
-        var prompt = $"Answer the question based on the following context:\n\n{context}\n\nQuestion: {question}";
+        var prompt = $"Only answer the question based on the following context:\n\n{context}\n\nQuestion: {question}";
 
         var request = new
         {
@@ -77,12 +77,14 @@ public class LlmService : ILlmService
 
     public async Task IndexDocumentAsync(string fullText)
     {
+        var scopeId = Guid.NewGuid().ToString();
         var chunks = ChunkText(fullText);
         foreach (var chunk in chunks)
         {
             var embedding = await GetEmbeddingAsync(chunk);
             var doc = new BsonDocument
             {
+                { "scopeId", scopeId},
                 { "content", chunk },
                 { "embedding", new BsonArray(embedding) }
             };
@@ -90,27 +92,31 @@ public class LlmService : ILlmService
         }
     }
 
-    private async Task<List<string>> SearchRelevantChunksAsync(string query, int topK = 3)
+    private async Task<List<string>> SearchRelevantChunksAsync(string scopeId, string query, int topK = 3)
     {
         var embedding = await GetEmbeddingAsync(query);
 
         var pipeline = new[]
         {
             new BsonDocument("$vectorSearch", new BsonDocument
-            {
-                { "index", "llm-vector-searh-index" },
+            {   
+                { "index", "llm-vector-search-index" },
                 { "path", "embedding" },
                 { "queryVector", new BsonArray(embedding) },
                 { "numCandidates", 100 },
                 { "limit", topK },
-                { "similarity", "cosine" }
+                { "similarity", "cosine" },
+                {
+                    "filter", new BsonDocument("scopeId", scopeId)
+                }
             }),
             new BsonDocument("$project", new BsonDocument
             {
                 { "content", 1 },
                 { "score", new BsonDocument("$meta", "vectorSearchScore") },
                 { "_id", 0 }
-            })
+            }),
+            new BsonDocument("$match", new BsonDocument("score", new BsonDocument("$gte", 0.75)))
         };
         var result = await _collection.AggregateAsync<BsonDocument>(pipeline);
         return result.ToList().Select(d => d["content"].AsString).ToList();
