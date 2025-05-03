@@ -20,8 +20,8 @@ namespace LLMChatbot.Controllers
             if (string.IsNullOrWhiteSpace(text))
                 return BadRequest("Text cannot be empty.");
 
-            await _llmService.IndexDocumentAsync(text);
-            return NoContent();
+            var scopeId = await _llmService.SaveDocumentAsync(text);
+            return Ok(scopeId);
         }
 
         [HttpPost("questions/{scopeId}")]

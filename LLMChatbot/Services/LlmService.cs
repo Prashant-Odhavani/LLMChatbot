@@ -75,7 +75,7 @@ public class LlmService : ILlmService
         return doc.RootElement.GetProperty("response").GetString() ?? "No answer generated.";
     }
 
-    public async Task IndexDocumentAsync(string fullText)
+    public async Task<string> SaveDocumentAsync(string fullText)
     {
         var scopeId = Guid.NewGuid().ToString();
         var chunks = ChunkText(fullText);
@@ -90,6 +90,8 @@ public class LlmService : ILlmService
             };
             await _collection.InsertOneAsync(doc);
         }
+
+        return scopeId;
     }
 
     private async Task<List<string>> SearchRelevantChunksAsync(string scopeId, string query, int topK = 3)
