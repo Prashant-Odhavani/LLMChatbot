@@ -59,7 +59,24 @@ public class LlmService : ILlmService
     {
         var client = _httpClientFactory.CreateClient("LLMClient");
 
-        var prompt = $"Only answer the question based on the following context:\n\n{context}\n\nQuestion: {question}";
+        var prompt = $@"
+You are an AI assistant. Only answer the following question **if and only if** the answer is explicitly and fully contained in the context provided below.
+
+Rules:
+- Do NOT use any external knowledge or assumptions.
+- Carefully check whether the context actually contains the answer to the question.
+- If the context does NOT contain enough information to answer, you MUST respond exactly with:
+  'The context does not provide enough information to answer this question.'
+
+Context:
+{context}
+
+Question:
+{question}
+
+Important: Do not attempt to infer or guess information that is not explicitly present in the context.
+";
+
 
         var request = new
         {
