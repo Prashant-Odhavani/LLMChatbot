@@ -77,7 +77,6 @@ Question:
 Important: Do not attempt to infer or guess information that is not explicitly present in the context.
 ";
 
-
         var request = new
         {
             model = "llama3", // or use mistral, gemma, etc.
